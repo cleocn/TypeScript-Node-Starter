@@ -15,6 +15,9 @@ import * as path from "path";
 import * as mongoose from "mongoose";
 import * as passport from "passport";
 import expressValidator = require("express-validator");
+// 微信小程序 图片上传
+const multer  = require("multer");
+const upload = multer({ dest: path.join(__dirname, "./public/uploads/") });
 
 
 const MongoStore = mongo(session);
@@ -22,7 +25,7 @@ const MongoStore = mongo(session);
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
-dotenv.config({ path: ".env.example" });
+dotenv.config({ path: ".env" });
 
 
 /**
@@ -32,6 +35,8 @@ import * as homeController from "./controllers/home";
 import * as userController from "./controllers/user";
 import * as apiController from "./controllers/api";
 import * as contactController from "./controllers/contact";
+
+import * as RecommendedController from "./controllers/recommended";
 
 /**
  * API keys and Passport configuration.
@@ -46,8 +51,9 @@ const app = express();
 /**
  * Connect to MongoDB.
  */
-// mongoose.Promise = global.Promise;
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI);
+(<any>mongoose).Promise = global.Promise;
+// (<any>mongoose).Promise = require("bluebird");  // promiseLibrary: require("bluebird")
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, {useMongoClient: true});
 
 mongoose.connection.on("error", () => {
   console.log("MongoDB connection error. Please make sure MongoDB is running.");
@@ -121,6 +127,12 @@ app.post("/account/profile", passportConfig.isAuthenticated, userController.post
 app.post("/account/password", passportConfig.isAuthenticated, userController.postUpdatePassword);
 app.post("/account/delete", passportConfig.isAuthenticated, userController.postDeleteAccount);
 app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userController.getOauthUnlink);
+
+app.get("/recommended", RecommendedController.getMyRecommendeds);
+app.post("/recommended", RecommendedController.postRecommended);
+app.get("/onLogin", userController.getonLogin);
+app.post("/upload", upload.single("file"), RecommendedController.postUpload);
+
 
 /**
  * API examples routes.

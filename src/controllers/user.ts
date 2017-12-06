@@ -7,8 +7,7 @@ import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 const request = require("express-validator");
-
-
+const httpRequest = require("request");
 /**
  * GET /login
  * Login page.
@@ -71,6 +70,36 @@ export let getSignup = (req: Request, res: Response) => {
   }
   res.render("account/signup", {
     title: "Create Account"
+  });
+};
+
+/**
+ * GET /onLogin
+ * 小程序登录时候使用
+ */
+export let getonLogin = (req: Request, res: Response) => {
+  const appid = process.env.XIAOCHENXU_APPID;
+  const secret = process.env.XIAOCHENXU_SECRET;
+  const js_code = req.query.code ;
+  const url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid + "&secret=" + secret + "&js_code=" + js_code + "&grant_type=authorization_code";
+
+  httpRequest(url, function (error: any, response: Response, body: any) {
+    if (!error && response.statusCode == 200) {
+      console.log(body);
+      res.json(body);
+      // 正常返回的JSON数据包
+      // {
+      //   "openid": "OPENID",
+      //   "session_key": "SESSIONKEY",
+      //   "unionid": "UNIONID"
+      // }
+      // //错误时返回JSON数据包(示例为Code无效)
+      // {
+      // "errcode": 40029,
+      // "errmsg": "invalid code"
+      // }
+
+    }
   });
 };
 

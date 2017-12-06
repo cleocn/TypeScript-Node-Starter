@@ -12,6 +12,7 @@ pids
 logs
 results
 tmp
+npm-debug.log.*
 
 #Build
 public/css/main.css
