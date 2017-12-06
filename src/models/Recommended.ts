@@ -14,7 +14,7 @@ export type RecommendedModel = mongoose.Document & {
 
 const recommendedSchema = new mongoose.Schema({
   title: String,
-  images: [{url: String, name: String}],
+  images: [{path: String, name: String}],
   description: String,
   isDeleted: Boolean,
 
