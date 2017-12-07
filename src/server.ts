@@ -136,6 +136,8 @@ app.get("/onLogin", userController.getonLogin);
 app.post("/upload", upload.single("file"), RecommendedController.postUpload);
 app.post("/getwxacodeunlimit", WechatController.getwxacodeunlimit);
 app.get("/recommended/:id", RecommendedController.getRecommendedById);
+app.delete("/recommended/:id", RecommendedController.delRecommendedById);
+
 
 /**
  * API examples routes.

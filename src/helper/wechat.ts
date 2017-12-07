@@ -30,71 +30,50 @@ export let getAccessToken = (appid: String) => {
 };
 
 /**
+ * 接口A: 适用于需要的码数量较少的业务场景
  * https://mp.weixin.qq.com/debug/wxadoc/dev/api/qrcode.html
  * @param body
  * {"path": "pages/index?query=1", "width": 430, auto_color: false, line_color: {"r":"0","g":"0","b":"0"}}
  */
 export let getwxacode = async (body: any) => {
-    return await getwxcode("https://api.weixin.qq.com/wxa/getwxacode?access_token=", body)
-    .catch( (err) => {
-        return "";
-    });
+    return await getwxcode("https://api.weixin.qq.com/wxa/getwxacode?access_token=", body);
 };
 
 /**
+ * 接口B：适用于需要的码数量极多，或仅临时使用的业务场景
  * https://mp.weixin.qq.com/debug/wxadoc/dev/api/qrcode.html
  * @param body
  * {"scene": "XXX","page":"pages/index/index", "width": 430, auto_color: false, line_color: {"r":"0","g":"0","b":"0"}}
  */
 export let getwxacodeunlimit = async (body: any) => {
-    return await getwxcode("https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=", body)
-    .catch( (err) => {
-        return "";
-    });
+    return await getwxcode("https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=", body);
 };
 
 /**
+ * 接口C：适用于需要的码数量较少的业务场景
  * https://mp.weixin.qq.com/debug/wxadoc/dev/api/qrcode.html
  * @param body
  * {"path": "pages/index?query=1", "width": 430}
  */
 export let createwxaqrcode = async (body: any) => {
-    return await getwxcode("https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode?access_token=", body)
-    .catch( (err) => {
-        return "";
-    });
+    return await getwxcode("https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode?access_token=", body);
 };
 
   const getwxcode = async (baseUrl: String, reqbody: any) => {
     const accessToken = await getAccessToken(process.env.XIAOCHENXU_APPID);
-    // https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=ACCESS_TOKEN
     const url = baseUrl + "" + accessToken;
-    console.log(url);
+    console.log("getwxcode url:", url);
     return new Promise(function(resolve, reject) {
-        // res是二进制流，后台获取后，直接保存为图片，然后将图片返回给前台
-        console.log("getwxacodeunlimit", "GET 二进制流 OK");
         const filePath = path.join(__dirname, "../public/uploads/barcode/");
         if (!fs.existsSync(filePath)) fs.mkdirSync(filePath);
         const filename = uuidv4() + ".jpg";
         const fullfilename = path.join(filePath , filename ) ;
 
-        // httpRequest.post({ url: url, json: true, body: reqbody }, function (error: any, res: Response, body: any) {
-        //     if (!error && res.statusCode == 200) {
-        //         fs.writeFile(fullfilename, body, "binary", function (err: any) {
-        //             if (err) {
-        //                 console.log("写入文件 fail");
-        //                 reject(err);
-        //             }
-        //             console.log("down success");
-        //             resolve("/uploads/barcode/" + filename);
-        //         });
-        //     } else {
-        //         console.log("getwxacodeunlimit error:", error);
-        //         reject(error);
-        //     }
-        // });
-        httpRequest.post({ url: url, json: true, body: reqbody })
+        const stream = httpRequest.post({ url: url, json: true, body: reqbody }) // 返回是二进制流，后台获取后，直接保存为图片，然后将图片返回给前台
         .pipe(fs.createWriteStream(fullfilename));
-        resolve("/uploads/barcode/" + filename);
+
+        stream.on("finish", function () {
+            resolve("/uploads/barcode/" + filename);
+        });
     });
   };

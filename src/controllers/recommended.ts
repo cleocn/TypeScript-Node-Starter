@@ -10,6 +10,7 @@ const fs = require("fs");
 import { default as Recommended, RecommendedModel } from "../models/Recommended";
 
 import * as wechatHelper from "../helper/wechat";
+import { Error } from "mongoose";
 /**
  * GET /myrecommendeds
  * 获取某人创建的推荐.
@@ -24,7 +25,7 @@ export let getMyRecommendeds = (req: Request, res: Response, next: NextFunction)
     //   .where("passwordResetExpires").gt(Date.now())
       .exec((err, results) => {
         if (err) { return next(err); }
-        res.json(results);
+        res.json({code: 0, data: results});
       });
 };
 export let getRecommendedById = (req: Request, res: Response, next: NextFunction) => {
@@ -34,6 +35,13 @@ export let getRecommendedById = (req: Request, res: Response, next: NextFunction
       .exec((err, results) => {
         if (err) { return next(err); }
         res.json({code: 0, data: results});
+      });
+};
+export let delRecommendedById = (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.params.id);
+    Recommended.remove({ _id: req.params.id }, function (err) {
+        if (err) { return next(err); }
+        res.json({code: 0, msg: "删除成功", data: {}});
       });
 };
 /**
@@ -61,10 +69,18 @@ export let postRecommended =  async (req: Request, res: Response, next: NextFunc
             const postBody = {
                 path: "pages/show?id=" + doc._id
             };
-            const result = await wechatHelper.getwxacode(postBody);
-            console.log(result);
-            recommended.barcode = result ;
-            recommended.save().then((doc2: any) => { res.json({code: 0, data: doc2}); }, (err: any) => {res.json({code: 500, error: err}); } );
+            try {
+                const result = await wechatHelper.getwxacode(postBody);
+                if (result === "") throw new Error("调用获取二维码失败");
+                console.log(result);
+                recommended.barcode = result ;
+                recommended.save().then(
+                    (doc: any) => { res.json({code: 0, data: doc}); },
+                    (err: any) => { res.json({code: 500, error: err}); }
+                );
+            } catch (err) {
+                res.json({code: 500, error: err});
+            }
         }
     }, (err2: any) => {
         res.json({code: 500, error: err2});
