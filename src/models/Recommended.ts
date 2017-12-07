@@ -9,6 +9,7 @@ export type RecommendedModel = mongoose.Document & {
   isDeleted: boolean,
 
   userId: string
+  barcode: string
 };
 
 
@@ -18,7 +19,8 @@ const recommendedSchema = new mongoose.Schema({
   description: String,
   isDeleted: Boolean,
 
-  userId: String
+  userId: String,
+  barcode: String
 }, {  timestamps: true });
 
 /**

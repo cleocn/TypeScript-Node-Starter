@@ -9,6 +9,7 @@ const fs = require("fs");
 
 import { default as Recommended, RecommendedModel } from "../models/Recommended";
 
+import * as wechatHelper from "../helper/wechat";
 /**
  * GET /myrecommendeds
  * 获取某人创建的推荐.
@@ -26,25 +27,47 @@ export let getMyRecommendeds = (req: Request, res: Response, next: NextFunction)
         res.json(results);
       });
 };
+export let getRecommendedById = (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.params.id);
+    Recommended
+      .findById(req.params.id)
+      .exec((err, results) => {
+        if (err) { return next(err); }
+        res.json({code: 0, data: results});
+      });
+};
 /**
  * POST /recommended
  * 某人创建新的推荐.
  */
-export let postRecommended = (req: Request, res: Response, next: NextFunction) => {
+export let postRecommended =  async (req: Request, res: Response, next: NextFunction) => {
+    let recommended: any  = undefined;
+    if (req.body._id) {
+        recommended = await findById(req.body._id);
+    } else {
+        recommended = new Recommended();
+    }
+    recommended.title = req.body.title;
+    recommended.images = req.body.images;
+    recommended.description = req.body.description;
+    recommended.userId = req.body.userId;
 
-    const recommended = new Recommended({
-        title: req.body.title,
-        images: req.body.images,
-        description: req.body.description,
-        userId: req.body.userId
-    });
     console.log(req.body);
     console.log(recommended);
-    const promise = recommended.save();
-    promise.then(  (doc) => {
-        res.json(doc);
-    }, (err2) => {
-        res.json(err2);
+    recommended.save().then( async (doc: any) => {
+        if (doc.barcode) {
+            res.json({code: 0, data: doc});
+        } else {
+            const postBody = {
+                path: "pages/show?id=" + doc._id
+            };
+            const result = await wechatHelper.getwxacode(postBody);
+            console.log(result);
+            recommended.barcode = result ;
+            recommended.save().then((doc2: any) => { res.json({code: 0, data: doc2}); }, (err: any) => {res.json({code: 500, error: err}); } );
+        }
+    }, (err2: any) => {
+        res.json({code: 500, error: err2});
     });
 };
 
@@ -57,30 +80,20 @@ export let postUpload = (req: Request, res: Response, next: NextFunction) => {
     // 图片重命名
     fs.rename((req as any).file.path, newFileName , (err: any) => {
         if (err) {
-            res.json({code: 500, msg: "文件写入失败"});
+            res.json({code: 500, error: "文件写入失败"});
         } else {
             // fs.unlinkSync(localFile);
-            res.json({code: 200, data: {path: "/uploads/" + fileName, file: (req as any).file}});
+            res.json({code: 0, data: {path: "/uploads/" + fileName, file: (req as any).file}});
         }
     });
-//     var form = new multiparty.Form();
-//     form.parse(request.payload, function(err, fields, files) {
-//     fs.readFile(files.idCardFront[0].path,function(err,data){
-//           if(!data || err){
-//                return ryply({code:401,msg:"请上传身份证正面照片"});
-//           }
-//             var fileName = files.idCardFront[0].originalFilename;
-//              var types = fileName.split('.'); //将文件名以.分隔，取得数组最后一项作为文件后缀名。
-// var picType = String(types[types.length-1]).toLocaleLowerCase();
-// if(picType=="jpg" || picType=="png" || picType=="jpeg"){
-// var date = new Date();
-//  var ms = Date.parse(date); //计算当前时间与1970年1月1日午夜相差的毫秒数 赋值给ms以确保文件名无重复。
-//  forntPath = appDir+"/kycFiles/front"+ ms +"." + String(types[types.length-1]);
-//  fs.renameSync(files.idCardFront[0].path, forntPath);
-//             }else{
-//               return reply({code:411,msg:"身份证正面照片格式不正确"});
-//              }
-//         })
-// ｝；
 };
 
+const  findById =  (id: string) => {
+    return new Promise(function(resolve, reject) {
+        Recommended.findById(id)
+        .exec((err, results) => {
+            if (err) { return reject(err); }
+            resolve(results);
+          });
+    });
+};

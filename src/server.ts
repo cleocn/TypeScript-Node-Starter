@@ -37,6 +37,8 @@ import * as apiController from "./controllers/api";
 import * as contactController from "./controllers/contact";
 
 import * as RecommendedController from "./controllers/recommended";
+import * as WechatController from "./controllers/wechat";
+
 
 /**
  * API keys and Passport configuration.
@@ -132,7 +134,8 @@ app.get("/recommended", RecommendedController.getMyRecommendeds);
 app.post("/recommended", RecommendedController.postRecommended);
 app.get("/onLogin", userController.getonLogin);
 app.post("/upload", upload.single("file"), RecommendedController.postUpload);
-
+app.post("/getwxacodeunlimit", WechatController.getwxacodeunlimit);
+app.get("/recommended/:id", RecommendedController.getRecommendedById);
 
 /**
  * API examples routes.
