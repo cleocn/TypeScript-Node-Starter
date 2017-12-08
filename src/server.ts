@@ -18,8 +18,8 @@ import expressValidator = require("express-validator");
 // 微信小程序 图片上传
 const multer  = require("multer");
 const upload = multer({ dest: path.join(__dirname, "./public/uploads/") });
-
-
+const Raven = require("raven");
+const git = require("git-rev-sync");
 const MongoStore = mongo(session);
 
 /**
@@ -27,6 +27,16 @@ const MongoStore = mongo(session);
  */
 dotenv.config({ path: ".env" });
 
+// Must configure Raven before doing anything else with it
+console.log("SENTRY_DSN", process.env.SENTRY_DSN);
+// Raven.config(process.env.SENTRY_DSN).install();
+Raven.config(process.env.SENTRY_DSN,
+{
+  release: git.long()
+}).install(function (err: any, initialErr: any, eventId: any) {
+  console.error(err);
+  process.exit(1);
+});
 
 /**
  * Controllers (route handlers).
@@ -44,11 +54,16 @@ import * as WechatController from "./controllers/wechat";
  * API keys and Passport configuration.
  */
 import * as passportConfig from "./config/passport";
+import { Request } from "_@types_express-serve-static-core@4.0.57@@types/express-serve-static-core";
+import { Response } from "_@types_superagent@3.5.6@@types/superagent";
 
 /**
  * Create Express server.
  */
 const app = express();
+
+// The request handler must be the first middleware on the app
+// app.use(Raven.requestHandler());
 
 /**
  * Connect to MongoDB.
@@ -109,6 +124,7 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 31557600000 }));
 
+
 /**
  * Primary app routes.
  */
@@ -157,7 +173,19 @@ app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRe
 /**
  * Error Handler. Provides full stack - remove for production
  */
-app.use(errorHandler());
+// app.use(errorHandler(Raven.requestHandler));
+
+// Optional fallthrough error handler
+app.use(function onError(err: any, req: Request, res: any, next: any) {
+  // The error id is attached to `res.sentry` to be returned
+  // and optionally displayed to the user for support.
+
+  Raven.captureException(err);
+  console.log("sentry ID:", res.sentry + "\n");
+  res.statusCode = 500;
+  res.end(res.sentry + "\n");
+});
+
 
 /**
  * Start Express server.

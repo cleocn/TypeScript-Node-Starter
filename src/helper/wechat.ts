@@ -15,6 +15,7 @@ const uuidv4 = require("uuid/v4");
  */
 export let getAccessToken = (appid: String) => {
     const url = process.env.WECHAT_ACCESS_TOKEN_SERVER + appid ;
+    console.log("WECHAT_ACCESS_TOKEN_SERVER:", url);
 
     return new Promise(function(resolve, reject) {
         httpRequest(url, function (error: any, res: Response, body: any) {
