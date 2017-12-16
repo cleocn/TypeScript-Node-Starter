@@ -1,0 +1,14 @@
+# config
+config/*
+
+# dist
+dist/*
+
+
+# Dependency directory
+node_modules
+bower_components
+
+#tmp
+tmp
+npm-debug.log.*

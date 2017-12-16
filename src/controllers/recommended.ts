@@ -37,6 +37,32 @@ export let getRecommendedById = (req: Request, res: Response, next: NextFunction
         res.json({code: 0, data: results});
       });
 };
+
+export let getRecommendedSendTemplateById = (req: Request, res: Response, next: NextFunction) => {
+
+    Recommended
+    .findById(req.params.id)
+    .exec((err, results) => {
+        if (err) { return next(err); }
+
+        const data: wechatHelper.SendTemplateData1 =
+            Object.assign( new wechatHelper.SendTemplateData1() ,
+            {
+                touser: "",
+                page: "",
+                data: {
+                    keyword1: "",
+                    keyword2: "",
+                    keyword3: "",
+                    keyword4: ""
+                }
+            });
+
+        wechatHelper.postSendTemplateMsg(data);
+        res.json({code: 0, data: results});
+    });
+};
+
 export let delRecommendedById = (req: Request, res: Response, next: NextFunction) => {
     console.log(req.params.id);
     Recommended.remove({ _id: req.params.id }, function (err) {

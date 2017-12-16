@@ -1,11 +1,9 @@
 "use strict";
 
 import * as async from "async";
-import * as request from "request";
+import * as httpRequest from "request";
 import { Response, Request, NextFunction } from "express";
-const httpRequest = require("request");
 import * as fs from "fs";
-
 import * as path from "path";
 const uuidv4 = require("uuid/v4");
 
@@ -18,12 +16,53 @@ export let getAccessToken = (appid: String) => {
     console.log("WECHAT_ACCESS_TOKEN_SERVER:", url);
 
     return new Promise(function(resolve, reject) {
-        httpRequest(url, function (error: any, res: Response, body: any) {
+        httpRequest(url, function (error: any, res: any, body: any) {
             if (!error && res.statusCode == 200) {
                 console.log("getAccessToken:", body);
                 resolve(body);
             } else {
                 console.log("getAccessToken error:", error);
+                reject(error);
+            }
+        });
+    });
+};
+
+export class SendTemplateData  {
+    touser: string;
+    template_id: string = "" ;
+    page: string;
+    form_id: string = "";
+    data: any;
+    color: string = "";
+    emphasis_keyword: string = "";
+}
+
+export class SendTemplateData1 extends SendTemplateData  {
+    template_id: string = "W3KfkaJY9Uxd-KmOfmZb7Z4FUkff4Vzb0BJMmbD4q_A";
+    data: template1;
+}
+export type template1 = {
+    keyword1: string , // 申请人   {{keyword1.DATA}}
+    keyword2: string, // 关注对象    {{keyword2.DATA}}
+    keyword3: string, // 申请时间  {{keyword3.DATA}}
+    keyword4: string // 亲友关系    {{keyword4.DATA}}
+};
+// export let SendTemplateMsg1 = async ( data: SendTemplateData1) => {
+//     postSendTemplateMsg(data);
+// };
+
+export let postSendTemplateMsg = async ( data: SendTemplateData) => {
+    const accessToken = await getAccessToken(process.env.XIAOCHENXU_APPID);
+    const url = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=" + accessToken ;
+
+    return new Promise(function(resolve, reject) {
+        httpRequest.post(url, {body: data}, function (error: any, res: any, body: any) {
+            if (!error && res.statusCode == 200) {
+                console.log("postSendTemplateMsg:", body);
+                resolve(body);
+            } else {
+                console.log("postSendTemplateMsg error:", error);
                 reject(error);
             }
         });

@@ -1,0 +1,42 @@
+version: "3.3"
+
+services:
+  web:
+    # replace username/repo:tag with your name and image details
+    # build: .
+    image: cleocn/xiaoniao-api:4
+    configs:
+      - source: config_env
+        target: /app/config/.env
+    environment:
+      DOCKER_MONGODB_URI: "mongodb://mongo:27017/xiaoniao"
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 100M
+    ports:
+      - "3003:3000"
+    links:
+      - mongo
+    depends_on:
+      - mongo
+  mongo:
+    # container_name: mongo
+    image: mongo:3.0.14
+    command: mongod --noprealloc --smallfiles --dbpath /data/db --nojournal --oplogSize 16 --noauth
+    ports:
+      - "27018:27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /data/dbxn:/data/db
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+configs:
+  config_env:
+    file: ./config/.env

@@ -25,7 +25,9 @@ const MongoStore = mongo(session);
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
-dotenv.config({ path: ".env" });
+const envPath = path.join(__dirname, "../config/.env" );
+console.log("dotenv.config :", envPath);
+dotenv.config({ path: envPath });
 
 // Must configure Raven before doing anything else with it
 console.log("SENTRY_DSN", process.env.SENTRY_DSN);
@@ -34,8 +36,8 @@ Raven.config(process.env.SENTRY_DSN,
 {
   release: git.long()
 }).install(function (err: any, initialErr: any, eventId: any) {
-  console.error(err);
-  process.exit(1);
+  console.log(err);
+  // process.exit(1);
 });
 
 /**
@@ -70,14 +72,14 @@ const app = express();
  */
 (<any>mongoose).Promise = global.Promise;
 // (<any>mongoose).Promise = require("bluebird");  // promiseLibrary: require("bluebird")
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, {useMongoClient: true});
+const mongoUri = process.env.DOCKER_MONGODB_URI || process.env.MONGODB_URI || process.env.MONGOLAB_URI ;
+console.log("MONGODB:", mongoUri);
+(<any>mongoose).connect(mongoUri, {useMongoClient: true});
 
 mongoose.connection.on("error", () => {
   console.log("MongoDB connection error. Please make sure MongoDB is running.");
   process.exit();
 });
-
-
 
 /**
  * Express configuration.
@@ -95,7 +97,7 @@ app.use(session({
   saveUninitialized: true,
   secret: process.env.SESSION_SECRET,
   store: new MongoStore({
-    url: process.env.MONGODB_URI || process.env.MONGOLAB_URI,
+    url: mongoUri, // process.env.MONGODB_URI || process.env.MONGOLAB_URI,
     autoReconnect: true
   })
 }));
@@ -154,6 +156,7 @@ app.post("/getwxacodeunlimit", WechatController.getwxacodeunlimit);
 app.get("/recommended/:id", RecommendedController.getRecommendedById);
 app.delete("/recommended/:id", RecommendedController.delRecommendedById);
 
+app.post("/wx/sendtemplatemsg", WechatController.postSendTemplateMsg);
 
 /**
  * API examples routes.
@@ -176,15 +179,16 @@ app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRe
 // app.use(errorHandler(Raven.requestHandler));
 
 // Optional fallthrough error handler
-app.use(function onError(err: any, req: Request, res: any, next: any) {
-  // The error id is attached to `res.sentry` to be returned
-  // and optionally displayed to the user for support.
+// app.use(function onError(err: any, req: Request, res: any, next: any) {
+//   // The error id is attached to `res.sentry` to be returned
+//   // and optionally displayed to the user for support.
 
-  Raven.captureException(err);
-  console.log("sentry ID:", res.sentry + "\n");
-  res.statusCode = 500;
-  res.end(res.sentry + "\n");
-});
+//   Raven.captureException(err);
+//   console.log("sentry ID:", res.sentry + "\n");
+//   res.statusCode = 500;
+//   // res.end(res.sentry + "\n");
+//   res.end(JSON.stringify(err));
+// });
 
 
 /**

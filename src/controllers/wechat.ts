@@ -21,3 +21,11 @@ export let getwxacodeunlimit = async (req: Request, res: Response) => {
     console.log(result);
     res.json({code: 0, data: result});
 };
+
+export let postSendTemplateMsg = async (req: Request, res: Response) => {
+    const result = await wechatHelper.postSendTemplateMsg(req.body);
+    console.log(result);
+    res.json({code: 0, data: result});
+};
+
+
